@@ -1,12 +1,9 @@
 # ATL-Datamart Version Python
 ==============================
 
-Projet pour :  
-* Cours d'atelier Architecture décisionnelle Datamart (TRDE704) pour les I1 de l'EPSI Paris et Arras.
+<p><small>Forked from <a target="_blank" href="https://github.com/Noobzik/ATL-Datamart"></a></small></p>
+<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
 
-Le sujet est à disposition dans le dossier `docs` et à jour dans votre espace learning.
-
-## Comment utiliser ce template ?
 
 ### Gérer l'infrastructure
 Vous n'avez pas besoin d'installer l'ensemble de l'architecture sur votre PC. L'intégralité de l'architecture (à l'exception des dépendances de développement) est gérée par le fichier de configuration `docker-compose.yml`.
@@ -26,44 +23,24 @@ Vous n'avez pas besoin d'installer l'ensemble de l'architecture sur votre PC. L'
 ### Description détaillée du sujet
 
 * Pour le TP 1 :  
-  * Il faudra utiliser le fichier situé à `src/data/grab_parquet.py` et compléter les fonctions qui sont vides.  
-  * Remarque : Ne vous cassez pas la tête à effacer les fonctions. Sinon, vous allez augmenter exponentiellement la difficulté de réaliser ce TP.
+
+  * **Approche réalisée** : Implémentation du script Python `src/data/grab_parquet.py` pour télécharger les données des Taxis Jaunes (Jan-Août 2023) et les uploader dans le bucket Minio `nybuck` via la librairie `minio` et l'API S3.
   
-* Pour le TP 2 : Il existe deux approches :  
-  Le but de ce TP est de récupérer les fichiers **Parquet** stockés dans votre datalake (qui est Minio) pour les stocker en l'état **brut**, vers le Data Warehouse (ici PostgreSQL par défaut).
-  * Soit vous utilisez [Amphi.AI](https://amphi.ai/), qui est un ETL open source (difficulté élevée) (***SVP, faites-moi un retour régulier pour l'améliorer !***)
-  * Soit vous adaptez le code situé dans `src/data/dump_to_sql.py`. La version actuelle récupère les fichiers stockés en local et déverse les données dans le Data Warehouse sans les optimisations d'injection. Votre but ici sera d'adapter le code pour récupérer depuis le datalake Minio, et d'optimiser la vitesse de l'injection des données.
-     * **Remarque** : L'implémentation actuelle permet uniquement de prendre les fichiers **Parquet** sauvegardés en local. Vous devriez modifier le programme pour qu'il récupère les fichiers **Parquet** que vous avez stockés dans Minio.
+* Pour le TP 2 : 
+
+     * **Approche réalisée** : Modification de `src/data/dump_to_sql.py` pour lire les fichiers Parquet (échantillonnés à 1000 lignes pour la performance), nettoyage des colonnes, et insertion optimisée (`chunksize`, `multi`) dans la base PostgreSQL `nyc_warehouse` (Table `nyc_raw`).
      
 * Pour le TP 3 :  
-  * Vous devez utiliser des requêtes SQL sur le SGBD de votre choix afin de créer les tables selon le modèle en flocon. Par souci de simplicité du sujet, vous êtes libre d'utiliser le SGBD de votre choix sans tenir compte des propriétés OLAP.
-  * Vous aurez donc un script SQL pour chaque tâche distincte :
-    * `creation.sql` pour la création des tables en flocon avec les contraintes associées.
-    * `insertion.sql` pour insérer les données depuis votre base de données `Data Warehouse` vers votre base de données `Data Mart`.  
-       * Remarque : Ce sont bien **DEUX SERVEURS SGBD** distincts **ET NON DEUX BASES DE DONNÉES DANS UN MÊME SERVEUR** !
+
+  * **Approche réalisée** : Création d'un modèle en flocon (Snowflake) dans `models/creation.sql` (Dimensions : Date, Time, Vendor, Payment, Location ; Fait : Trips). Utilisation de `postgres_fdw` dans `models/insertion.sql` pour transférer et transformer les données du Data Warehouse vers le Data Mart (`nyc_datamart`).
        
 * Pour le TP 4 :  
-  * Lorsque vous aurez fait le TP 3, vous devriez normalement avoir une idée sur la restitution des données que vous souhaitez faire dans la partie Dataviz.
-    * Si ce n'est pas le cas, vous pouvez ouvrir un Notebook qui sera sauvegardé dans le dossier `notebooks` pour réaliser votre Analyse Exploratoire de Données (EDA).
-    * Pour les plus chauds d'entre vous, vous pouvez concevoir un tableau de bord à l'aide de [Streamlit](https://streamlit.io/), vous y trouverez des exemples dans la section Gallery.
-  * Vous devez connecter votre outil de Data Visualisation à votre base de **données** `Data Mart` afin de produire les visualisations.
+
+  * **Approche réalisée** : Connexion de Power BI au Data Mart via PostgreSQL (port 15435) pour créer un dashboard interactif (Heatmap, KPIs financiers, répartition temporelle).
   
 * Pour le TP 5 :  
-  * Cette partie du TP vous servira d'introduction à l'orchestration des tâches d'un projet Big Data. C'est-à-dire de lancer des scripts Python de manière totalement automatisée sur un **intervalle** défini.
-  * Pour le moment, je vous demande de réaliser un **DAG** qui permet de télécharger un fichier **Parquet** du dernier mois en vigueur et de le stocker dans Minio.
-  * Une fois que vous aurez compris le fonctionnement des **DAGs**, vous pouvez vous amuser à automatiser le TP 2 et le TP 3 afin de rendre le TP 4 totalement autonome.
 
-Pour le TP 5, il faudra créer vous-même le répertoire suivant :  
-Sinon, vous risquez d'avoir des problèmes lors du lancement des conteneurs.
-
-------------
-
-    ├── airflow
-    │   ├── config       <- Configuration files related to the Airflow Instance
-    │   ├── dags         <- Folder that contains all the dags
-    │   ├── logs         <- Contains the logs of the previously dags run
-    │   └── plugins      <- Should be empty : Contains all needed plugins to make the dag work
-   
+  * **Approche réalisée** : Création du DAG `monthly_nyc_data_grab` dans Airflow. Le DAG s'exécute le 1er de chaque mois, calcule le mois précédent, télécharge les données officielles NYC TLC, et les archive sur Minio. Inclusion d'une sécurité pour gérer les dates futures lors des tests manuels.
 
 
 --------
@@ -122,5 +99,3 @@ Project Organization
 
 
 --------
-
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>

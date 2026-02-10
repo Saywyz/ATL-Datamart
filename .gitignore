@@ -90,3 +90,9 @@ target/
 
 # Minio
 minio/
+
+*.ipynb
+*.env
+*.env.*
+*.venv
+*.1

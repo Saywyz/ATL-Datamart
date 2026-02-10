@@ -19,7 +19,7 @@ def write_data_postgres(dataframe: pd.DataFrame) -> bool:
     """
     db_config = {
         "dbms_engine": "postgresql",
-        "dbms_username": "postgres",
+        "dbms_username": "admin",
         "dbms_password": "admin",
         "dbms_ip": "localhost",
         "dbms_port": "15432",
@@ -35,8 +35,9 @@ def write_data_postgres(dataframe: pd.DataFrame) -> bool:
         engine = create_engine(db_config["database_url"])
         with engine.connect():
             success: bool = True
-            print("Connection successful! Processing parquet file")
-            dataframe.to_sql(db_config["dbms_table"], engine, index=False, if_exists='append')
+            print(f"Connection successful! Inserting {len(dataframe)} rows...")
+            # Use chunks to speed up insertion
+            dataframe.to_sql(db_config["dbms_table"], engine, index=False, if_exists='append', chunksize=5000, method='multi')
 
     except Exception as e:
         success: bool = False
@@ -69,7 +70,12 @@ def main() -> None:
                      f.lower().endswith('.parquet') and os.path.isfile(os.path.join(folder_path, f))]
 
     for parquet_file in parquet_files:
+        print(f"Reading {parquet_file}...")
         parquet_df: pd.DataFrame = pd.read_parquet(os.path.join(folder_path, parquet_file), engine='pyarrow')
+
+        # Sample 1000 rows to reduce upload size
+        parquet_df = parquet_df.sample(n=1000, random_state=42)
+        print(f"Sampled 1000 rows from {parquet_file}")
 
         clean_column_name(parquet_df)
         if not write_data_postgres(parquet_df):
