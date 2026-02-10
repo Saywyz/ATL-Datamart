@@ -1,7 +1,7 @@
 # ATL-Datamart Version Python
 ==============================
 
-<p><small>Forked from <a target="_blank" href="https://github.com/Noobzik/ATL-Datamart"></a></small></p>
+<p><small>Forked from <a target="_blank" href="https://github.com/Noobzik/ATL-Datamart">Noobzik Repo</a></small></p>
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
 
 
